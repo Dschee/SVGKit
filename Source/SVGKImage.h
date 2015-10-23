@@ -58,6 +58,8 @@ typedef void (^SVGKImageAsynchronousLoadingDelegate)(SVGKImage* loadedImage);
 #endif
 }
 
++ (void)setBundle:(NSBundle *)bundle;
+
 /** Generates an image on the fly
  
  NB you can get MUCH BETTER performance using the methods such as exportUIImageAntiAliased and exportNSDataAntiAliased

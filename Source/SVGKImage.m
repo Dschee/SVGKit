@@ -62,6 +62,15 @@
 @synthesize nameUsedToInstantiate = _nameUsedToInstantiate;
 static NSMutableDictionary* globalSVGKImageCache;
 
+static NSBundle *_bundle;
+
+// MARK: - Class Attributes
+
++ (void)setBundle:(NSBundle *)bundle
+{
+    _bundle = bundle;
+}
+
 #pragma mark - Respond to low-memory warnings by dumping the global static cache
 +(void) initialize
 {
@@ -83,53 +92,60 @@ static NSMutableDictionary* globalSVGKImageCache;
 #endif
 
 #pragma mark - Convenience initializers
+
 +(SVGKSource*) internalSourceAnywhereInBundleUsingName:(NSString*) name
 {
-	NSParameterAssert(name != nil);
-	
-	/** Apple's File APIs are very very bad and require you to strip the extension HALF the time.
-	 
-	 The other HALF the time, they fail unless you KEEP the extension.
-	 
-	 It's a mess!
-	 */
-	NSString *newName = [name stringByDeletingPathExtension];
-	NSString *extension = [name pathExtension];
+    NSParameterAssert(name != nil);
+    
+    /** Apple's File APIs are very very bad and require you to strip the extension HALF the time.
+     
+     The other HALF the time, they fail unless you KEEP the extension.
+     
+     It's a mess!
+     */
+    NSString *newName = [name stringByDeletingPathExtension];
+    NSString *extension = [name pathExtension];
     if ([@"" isEqualToString:extension]) {
         extension = @"svg";
     }
-	
-	/** First, try to find it in the project BUNDLE (this was HARD CODED at compile time; can never be changed!) */
-	NSString *pathToFileInBundle = nil;
-	NSBundle *bundle = [NSBundle mainBundle];
-	if( bundle != nil )
-	{
-		pathToFileInBundle = [bundle pathForResource:newName ofType:extension];
-	}
-	
-	/** Second, try to find it in the Documents folder (this is where Apple expects you to store custom files at runtime) */
-	NSString* pathToFileInDocumentsFolder = nil;
-	NSString* pathToDocumentsFolder = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
-	if( pathToDocumentsFolder != nil )
-	{
-		pathToFileInDocumentsFolder = [[pathToDocumentsFolder stringByAppendingPathComponent:newName] stringByAppendingPathExtension:extension];
-		if( [[NSFileManager defaultManager] fileExistsAtPath:pathToFileInDocumentsFolder])
-			;
-		else
-			pathToFileInDocumentsFolder = nil; // couldn't find a file there
-	}
-	
-	if( pathToFileInBundle == nil
-	   && pathToFileInDocumentsFolder == nil )
-	{
-		DDLogCWarn(@"[%@] MISSING FILE (not found in App-bundle, not found in Documents folder), COULD NOT CREATE DOCUMENT: filename = %@, extension = %@", [self class], newName, extension);
-		return nil;
-	}
-	
-	/** Prefer the Documents-folder version over the Bundle version (allows you to have a default, and override at runtime) */
-	SVGKSourceLocalFile* source = [SVGKSourceLocalFile sourceFromFilename: pathToFileInDocumentsFolder == nil ? pathToFileInBundle : pathToFileInDocumentsFolder];
-	
-	return source;
+    
+    /** First, try to find it in the project BUNDLE (this was HARD CODED at compile time; can never be changed!) */
+    NSString *pathToFileInBundle = nil;
+    NSBundle *bundle;
+    if (_bundle == nil) {
+        bundle = [NSBundle mainBundle];
+    } else {
+        bundle = _bundle;
+    }
+    
+    if( bundle != nil )
+    {
+        pathToFileInBundle = [bundle pathForResource:newName ofType:extension];
+    }
+    
+    /** Second, try to find it in the Documents folder (this is where Apple expects you to store custom files at runtime) */
+    NSString* pathToFileInDocumentsFolder = nil;
+    NSString* pathToDocumentsFolder = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) firstObject];
+    if( pathToDocumentsFolder != nil )
+    {
+        pathToFileInDocumentsFolder = [[pathToDocumentsFolder stringByAppendingPathComponent:newName] stringByAppendingPathExtension:extension];
+        if( [[NSFileManager defaultManager] fileExistsAtPath:pathToFileInDocumentsFolder])
+            ;
+        else
+            pathToFileInDocumentsFolder = nil; // couldn't find a file there
+    }
+    
+    if( pathToFileInBundle == nil
+       && pathToFileInDocumentsFolder == nil )
+    {
+        DDLogCWarn(@"[%@] MISSING FILE (not found in App-bundle, not found in Documents folder), COULD NOT CREATE DOCUMENT: filename = %@, extension = %@", [self class], newName, extension);
+        return nil;
+    }
+    
+    /** Prefer the Documents-folder version over the Bundle version (allows you to have a default, and override at runtime) */
+    SVGKSourceLocalFile* source = [SVGKSourceLocalFile sourceFromFilename: pathToFileInDocumentsFolder == nil ? pathToFileInBundle : pathToFileInDocumentsFolder];
+    
+    return source;
 }
 
 + (SVGKImage *)imageNamed:(NSString *)name

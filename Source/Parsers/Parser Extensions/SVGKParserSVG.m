@@ -68,9 +68,6 @@
 /** "tags supported" is exactly the set of all SVGElement subclasses that already exist */
 -(NSArray*) supportedTags
 {
-    NSLog(@"self.elementMap: %@", self.elementMap);
-    NSLog(@"self.elementMap.allKeys: %@", self.elementMap.allKeys);
-    
     return [NSMutableArray arrayWithArray:[self.elementMap allKeys]];
 }
 
